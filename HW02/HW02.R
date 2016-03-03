@@ -253,4 +253,14 @@ barplot(rbind(sds, sds5), main="Standard Deviation Value Differences",
 # percentage difference
 barplot((abs(sds-sds5)/sds)*100)
 
+# Question # 6
+
+diameter <- data$Diameter
+weight <- data$Weight
+diameter.average <- mean(diameter)
+weight.average <- mean(weight)
+w1 <- sum((weight-weight.average)*(diameter-diameter.average))/sum((weight-weight.average)*(weight-weight.average))
+w0 <- diameter.average-w1*weight.average 
+plot(weight, w0 + w1*weight, col = "red", lwd=2, xlab = "weight", ylab = "diameter", type="l")
+points(weight, diameter)
 
