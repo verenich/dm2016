@@ -1,0 +1,256 @@
+#clear data
+rm(list=ls())
+
+# Read the abalone.csv file
+data = read.csv("abalone.csv", head=TRUE)
+
+# Question # 1
+
+# Get the names of the columns of the data
+colnames(data)
+
+# Get the number of rows in the data
+nrow(data)
+
+# Get the first 3 rows of data
+head(data, 3)
+
+# Get the last 2 rows of data
+tail(data, 2)
+
+# Weight of the last 2 rows
+tail(data$Weight, 2)
+
+# Value of diameter in the row 755
+data[755,]$Diameter
+
+# Number of missing values in height column
+sum(is.na(data$Height))
+
+# Mean of the values of the height column, excluding missing values
+mean(data$Height, na.rm=TRUE)
+
+# Subset of Gender="M" and Weight < 0.75
+ss = subset(data, Gender == "M" & Weight < 0.75)
+# Mean of the diameter if the subset
+mean(ss$Diameter, na.rm=TRUE)
+
+# Most Frequent Value in Rings
+mostFrequentRingValue = sort(table(data$Rings),decreasing=TRUE)[1]
+names(mostFrequentRingValue)
+# With number of occurences
+cat(mostFrequentRingValue[1])
+
+# Subset of data with ring value equal to 18
+ss2 = subset(data, Rings == 18)
+# Minimum length of the subset
+min(ss2$Length)
+
+# Question # 2
+columns = c("Gender", "Length", "Diameter", "Height", "Weight", "Rings")
+data2= 0
+data2 = data
+# Replacing M = 3, I = 2, F = 1 for gender
+data2$Gender <- as.integer(data2$Gender)
+
+# Mean of each column
+means = colMeans(data2, na.rm=TRUE)
+means
+
+# Median of each column
+medians = matrix(c(median(data2$Gender, na.rm=TRUE), median(data2$Length, na.rm=TRUE), median(data2$Diameter, na.rm=TRUE), median(data2$Height, na.rm=TRUE), median(data2$Weight, na.rm=TRUE), median(data2$Rings, na.rm=TRUE)), nrow=1, ncol=6)
+colnames(medians) <- columns
+medians
+
+# Max
+maxs = matrix(c(max(data2$Gender, na.rm=TRUE), max(data2$Length, na.rm=TRUE), max(data2$Diameter, na.rm=TRUE), max(data2$Height, na.rm=TRUE), max(data2$Weight, na.rm=TRUE), max(data2$Rings, na.rm=TRUE)), nrow=1, ncol=6)
+colnames(maxs) <- columns
+maxs
+
+# Min
+mins = matrix(c(min(data2$Gender, na.rm=TRUE), min(data2$Length, na.rm=TRUE), min(data2$Diameter, na.rm=TRUE), min(data2$Height, na.rm=TRUE), min(data2$Weight, na.rm=TRUE), min(data2$Rings, na.rm=TRUE)), nrow=1, ncol=6)
+colnames(mins) <- columns
+mins
+
+# Standard Deviation of each column
+sds = matrix(c(sd(data2$Gender, na.rm=TRUE), sd(data2$Length, na.rm=TRUE), sd(data2$Diameter, na.rm=TRUE), sd(data2$Height, na.rm=TRUE), sd(data2$Weight, na.rm=TRUE), sd(data2$Rings, na.rm=TRUE)), nrow=1, ncol=6)
+colnames(sds) <- columns
+sds
+
+# Distribution Plots
+plot(density(data2$Length))
+plot(density(data2$Diameter))
+plot(density(data2$Height, na.rm=TRUE))
+plot(density(data2$Weight))
+plot(density(data2$Rings))
+
+# Question 3
+# Correlation Plots and Values
+# Removing data with NA and Gender Column
+data3 = data[complete.cases(data),2:6]
+
+plot(data3)
+# Computing for the correlations of values between the features
+correlations <- c(cor(data3$Length, data3$Diameter),
+	cor(data3$Length, data3$Height),
+	cor(data3$Length, data3$Weight),
+	cor(data3$Length, data3$Rings),
+	cor(data3$Diameter, data3$Height),
+	cor(data3$Diameter, data3$Weight),
+	cor(data3$Diameter, data3$Rings),
+	cor(data3$Height, data3$Weight),
+	cor(data3$Height, data3$Rings),
+	cor(data3$Weight, data3$Rings))
+
+# Adding names for each correlation value
+names(correlations) <- c("Length-Diameter",
+	"Length-Height",
+	"Length-Weight",
+	"Length-Rings",
+	"Diameter-Height",
+	"Diameter-Weight",
+	"Diameter-Rings",
+	"Height-Weight",
+	"Height-Rings",
+	"Weight-Rings")
+
+# Sorting the correlation results to decreasing
+sort(correlations, decreasing = TRUE)
+
+# Length vs Diameter (Highest correlation between two variables)
+plot(data3$Length, data3$Diameter)
+lines(lowess(data3$Length,data3$Diameter), col="red") 
+abline(lm(data3$Length~data3$Diameter), col="blue")
+
+# Weight vs Diameter (Second Highest correlation between two variables)
+plot(data3$Weight, data3$Diameter)
+lines(lowess(data3$Weight,data3$Diameter), col="red")
+abline(lm(data3$Weight~data3$Diameter), col="blue")
+
+# Rings vs Length (Highest correlation value for the rings variable with another variable)
+plot(data3$Rings, data3$Length)
+lines(lowess(data3$Rings,data3$Length), col="red") 
+abline(lm(data3$Rings~data3$Length), col="blue")
+
+# Question 4
+
+# Length Outliers
+IQR = quantile(data$Length,0.75) - quantile(data$Length,0.25)
+outliersLength = which(data$Length > (quantile(data$Length,0.75) + 1.5*IQR) )
+data[outliersLength,]
+boxplot(data$Length)
+
+# Diameter Outliers
+IQR = quantile(data$Diameter,0.75) - quantile(data$Diameter,0.25)
+outliersDiameter = which(data$Diameter > (quantile(data$Diameter,0.75) + 1.5*IQR) )
+data[outliersDiameter,]
+boxplot(data$Diameter)
+
+# Height Outliers
+IQR = quantile(data$Height,0.75, na.rm=TRUE) - quantile(data$Height,0.25, na.rm=TRUE)
+outliersHeight = which( data$Height> (quantile(data$Height,0.75, na.rm=TRUE) + 1.5*IQR) )
+data[outliersHeight,]
+boxplot(data$Height)
+
+# Weight Outliers
+IQR = quantile(data$Weight,0.75) - quantile(data$Weight,0.25)
+outliersWeight = which(data$Weight> (quantile(data$Weight,0.75) + 1.5*IQR) )
+data[outliersWeight,]
+boxplot(data$Weight)
+
+# Rings Outliers
+IQR = quantile(data$Rings,0.75) - quantile(data$Rings,0.25)
+outliersRings = which(data$Rings > (quantile(data$Rings,0.75) + 1.5*IQR) )
+data[outliersRings,]
+boxplot(data$Rings)
+
+# Question 5
+outliers = unique(c(outliersLength, outliersDiameter, outliersHeight, outliersWeight, outliersRings))
+dataWoOutliers = data[-outliers,]
+
+# Replacing M = 3, I = 2, F = 1 for gender
+dataWoOutliers$Gender <- as.integer(dataWoOutliers$Gender)
+
+# Mean of each column
+means5 = colMeans(dataWoOutliers, na.rm=TRUE)
+
+# Median of each column
+medians5 = matrix(c(median(dataWoOutliers$Gender, na.rm=TRUE),
+	median(dataWoOutliers$Length, na.rm=TRUE),
+	median(dataWoOutliers$Diameter, na.rm=TRUE),
+	median(dataWoOutliers$Height, na.rm=TRUE),
+	median(dataWoOutliers$Weight, na.rm=TRUE),
+	median(dataWoOutliers$Rings, na.rm=TRUE)), nrow=1, ncol=6)
+colnames(medians5) <- columns
+medians5
+
+# Max
+maxs5 = matrix(c(max(dataWoOutliers$Gender, na.rm=TRUE),
+    max(dataWoOutliers$Length, na.rm=TRUE),
+    max(dataWoOutliers$Diameter, na.rm=TRUE),
+    max(dataWoOutliers$Height, na.rm=TRUE),
+    max(dataWoOutliers$Weight, na.rm=TRUE),
+    max(dataWoOutliers$Rings, na.rm=TRUE)),
+    nrow=1, ncol=6)
+colnames(maxs5) <- columns
+maxs5
+
+barplot(maxs5)
+# Min
+mins5 = matrix(c(min(dataWoOutliers$Gender, na.rm=TRUE),
+    min(dataWoOutliers$Length, na.rm=TRUE),
+    min(dataWoOutliers$Diameter, na.rm=TRUE),
+    min(dataWoOutliers$Height, na.rm=TRUE),
+    min(dataWoOutliers$Weight, na.rm=TRUE),
+    min(dataWoOutliers$Rings, na.rm=TRUE)),
+    nrow=1, ncol=6)
+colnames(mins5) <- columns
+mins5
+
+# Standard Deviation of each column
+sds5 = matrix(c(sd(dataWoOutliers$Gender, na.rm=TRUE),
+    sd(dataWoOutliers$Length, na.rm=TRUE),
+    sd(dataWoOutliers$Diameter, na.rm=TRUE),
+    sd(dataWoOutliers$Height, na.rm=TRUE),
+    sd(dataWoOutliers$Weight, na.rm=TRUE),
+    sd(dataWoOutliers$Rings, na.rm=TRUE)),
+    nrow=1, ncol=6)
+colnames(sds5) <- columns
+sds5
+
+# Mean
+barplot(rbind(medians, medians5), main="Mean Value Differences",
+  xlab="Feature", col=c("darkblue","red"),
+ 	legend = rownames(medians), beside=TRUE)
+# percentage difference
+barplot((abs(means-means5)/means)*100)
+
+# Median
+barplot(rbind(medians, medians5), main="Median Value Differences",
+  xlab="Feature", col=c("darkblue","red"),
+ 	legend = rownames(medians), beside=TRUE)
+# percentage difference
+barplot((abs(medians-medians5)/medians)*100)
+
+# Max
+barplot(rbind(maxs, maxs5), main="Max Value Differences",
+  xlab="Feature", col=c("darkblue","red"),
+ 	legend = rownames(maxs), beside=TRUE)
+# percentage difference
+barplot((abs(maxs-maxs5)/maxs)*100)
+
+# Min
+barplot(rbind(mins, mins5), main="Min Value Differences",
+  xlab="Feature", col=c("darkblue","red"),
+ 	legend = rownames(mins), beside=TRUE)
+# percentage difference
+barplot((abs(mins-mins5)/means)*100)
+
+# Standard Deviation
+barplot(rbind(sds, sds5), main="Standard Deviation Value Differences",
+  xlab="Feature", col=c("darkblue","red"),
+ 	legend = rownames(sds), beside=TRUE)
+# percentage difference
+barplot((abs(sds-sds5)/sds)*100)
+
+
