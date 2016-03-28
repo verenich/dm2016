@@ -1,0 +1,185 @@
+## Copyright Lisa Yankovskaya
+
+---
+title: "Data Mining. Homework: 6. Part 2"
+author: Your name here
+fontsize: 12pt
+output: pdf_document
+---
+
+## Task 4
+
+At first, I read data, check the first six observations, types of variables, dimensions and summary of the data. Then, by using _arules_ and _arulesViz_ libraries, I found different association rules for this data and plotted some of them on the graph.
+
+```{r, warning= F, message= F}
+library(arules)
+library(arulesViz)
+
+# Make a note where your data lies ... 
+titanic = read.table( "https://courses.cs.ut.ee/MTAT.03.183/2014_spring/uploads/Main/titanic.txt", sep = ',' , header = TRUE)
+
+#observe the data
+##first 6 observations
+head(titanic)
+#types of features
+str(titanic)
+#dimensionality of the data
+dim(titanic)
+#summary
+summary(titanic)
+```
+
+There are all association rules with default settings (presence an empty antecedent, support 0.1, confidence 0.8). For example, support = 0.1 means that rules with support < 0.1 are not considered. There are 27 rules, I displayed just the first ten. 
+
+
+```{r, warning= F, message= F}
+#run apriori algorithm with default settings
+rules = apriori(titanic)
+```
+
+```{r}
+rules
+#to table
+rules.tbl = as(rules, "data.frame")
+inspect(rules[1:10])
+```
+
+\newpage
+
+There is a scatter plot with support and confidence as x- and y-axes and colour of points indicates number of items contained in the rule. For example, order 1 corresponded the first rule in the table.
+
+```{r}
+plot(rules, shading="order", control=list(main = "Two-key plot"))
+```
+
+\newpage
+
+There are rules that predict survived or not with the same default settings. So there are just two rules and both predict perished people. What does it mean? Were are all people dead? Fortunately, the answer is no. To get more information and learn which rules(parameters) predict survived people we need to change values of support.
+
+```{r, warning= F, message= F}
+#now let us assume, we want to see only those rules that have rhs as survived:
+rules = apriori(titanic, 
+                appearance = list(rhs=c("Survived=No", "Survived=Yes"), 
+                                  default="lhs"))
+```
+
+```{r}
+#show rules
+rules.tbl = as(rules, "data.frame")
+inspect(rules)
+#plot them
+plot(rules, method="graph", control=list(type="items"))
+```
+
+\newpage
+
+If we change default parameters and set support = 0.03 and confidence = 0.5 and minimum number of antecedents = 1, so we get 27 rules (the first ten are displayed). 
+
+```{r, warning= F, message= F, echo = T}
+#change default parameters
+rules = apriori(titanic,parameter = list(minlen = 2, supp = 0.03, conf = 0.5),
+                appearance = list(rhs=c("Survived=No", "Survived=Yes"),
+                                  default="lhs"))
+```
+
+```{r}
+rules
+rules.tbl = as(rules, "data.frame")
+inspect(rules[1:10])
+
+```
+\newpage
+
+As can be seen, the graph for 27 rules is unreadable. This type of plot is not suitable for many rules. 
+
+```{r}
+#visualization
+plot(rules, method="graph", control=list(type="items"))
+```
+
+\newpage
+
+Here, we can use another type of plot. There are support and lift on axes and confidence as a colour-grade bar. It can be seen that rules with high lift have low support.
+
+```{r}
+plot(rules, measure=c("support", "lift"), shading="confidence")
+```
+
+\newpage
+
+One more plot:
+
+```{r}
+plot(rules, method="grouped",  control = list(k = 10))
+```
+
+\newpage
+
+Now I would like to check which rules predict survived people. There is a need to replace rhs=c("Survived=No", "Survived=Yes") to rhs = c("Survived=Yes"). I set support and confidence to low values and number of antecedents = 0 to calculate support for all survived people. It is equal 0.323 and we can check this value by using _summary_ and support's formula. Support = survived/(survived + perished) = 711/(711 + 1490) = 0.323.
+
+```{r, warning= F, message= F}
+#change default parameters
+rules = apriori(titanic,parameter = list(minlen = 1, maxlen = 1, 
+                                         supp = 0.0000001, conf = 0.00001),
+                appearance = list(rhs=c("Survived=Yes"),
+                                  default="lhs"))
+```
+
+```{r}
+rules.tbl = as(rules, "data.frame")
+inspect(rules)
+```
+
+\newpage
+
+## Task 5
+
+Let's continue to learn rules which predict survived people. Also, looking at the _summary_ of the data, we understand that there is a need to set values of support is very low, because total number of children or women was not large.
+There are eighteen rules. As can be seen, that about just half children are survived (the first rule, confidence = 0.52), at the same time all children from the first and the second classes are survived
+(the fourth and fifth rules, confidence = 1). Adult women from the first class are almost all survived (17-th rule, confidence = 0.97). Many women from the second class and who were crew members are survived (16-th and 18-th rules, confidence = 0.86 and 0.87), as well.
+
+Looking at these rules, it is clearly, that women and children have been rescued first of all. Also, lift is higher than one, so variables are dependent.
+
+```{r, warning= F, message= F, echo = T}
+#change default parameters
+rules = apriori(titanic,parameter = list(minlen = 2,
+                                         supp = 0.0000001, conf = 0.5),
+                appearance = list(rhs=c("Survived=Yes"),
+                                  default="lhs"))
+```
+
+```{r, fig.width= 12}
+rules.tbl = as(rules, "data.frame")
+inspect(rules)
+#visualization
+plot(rules, method="graph", measure=c("confidence"))
+```
+
+\newpage
+
+Let's see who are not survived. According to the table, almost all adult men from the second class and the third class are perished (confidence = 0.92 and 0.84, correspondingly). Also, after compared both tables, we can see that the more than half people from the first class are survived (confidence = 0.624) and the more than half people from the second and the third classes are perished (confidence = 0.59 and confidence = 0.75). 
+
+```{r, warning= F, message= F, echo = T}
+#change default parameters
+rules = apriori(titanic,parameter = list(minlen = 2,
+                                         supp = 0.0000001, conf = 0.5),
+                appearance = list(rhs=c("Survived=No"),
+                                  default="lhs"))
+```
+
+```{r, fig.width= 12}
+rules.tbl = as(rules, "data.frame")
+index_confidence = sort(rules.tbl$confidence, 
+                        decreasing = TRUE, 
+                        index.return = TRUE)$ix
+rules_confidence = rules[index_confidence]
+inspect(rules_confidence)
+#visualization
+plot(rules, method="grouped", measure=c("confidence"), control = list(k = 10))
+```
+
+
+```{r}
+#Rules with lift >= 1.
+subrules =  head(sort(rules, by ='lift'), 14)
+plot(subrules, method="graph", measure=c("confidence"))
